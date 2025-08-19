@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG数据一体化可视化系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(20, 20, 20, 0.9);
+            padding: 20px 40px;
+            border-bottom: 1px solid #333;
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            background: linear-gradient(45deg, #4a90e2, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #b0b0b0;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 10px 20px;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .mode-btn.active {
+            background: rgba(74, 144, 226, 0.3);
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .mode-btn:hover {
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-item label {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+            min-width: 60px;
+        }
+
+        .control-select, .control-input {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+
+        .control-select:focus, .control-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .control-btn {
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid #4a90e2;
+            border-radius: 6px;
+            padding: 8px 15px;
+            color: #4a90e2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .control-btn:hover {
+            background: rgba(74, 144, 226, 0.4);
+            color: #fff;
+        }
+
+        .file-upload {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            border-radius: 6px;
+            padding: 8px 15px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .file-upload:hover {
+            background: rgba(0, 255, 136, 0.4);
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .view-toggle button {
+            background: transparent;
+            border: none;
+            padding: 8px 15px;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .view-toggle button.active {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            color: #4a90e2;
+            padding: 20px;
+            font-size: 1.1rem;
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            position: relative;
+            min-height: 0;
+        }
+
+        .sidebar {
+            width: 380px;
+            background: rgba(20, 20, 20, 0.9);
+            border-right: 1px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar h3 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .info-panel {
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00ff88;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .info-panel h4 {
+            color: #00ff88;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .info-panel .field {
+            margin-bottom: 8px;
+        }
+
+        .info-panel .field-label {
+            color: #4a90e2;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .info-panel .field-value {
+            color: #b0b0b0;
+            font-size: 0.8rem;
+            line-height: 1.3;
+            word-wrap: break-word;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: rgba(40, 40, 40, 0.4);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .content-area {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(74, 144, 226, 0.1) 0%, transparent 50%);
+        }
+
+        .graph-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .graph-canvas:active {
+            cursor: grabbing;
+        }
+
+        .table-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 10, 10, 0.5);
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            min-height: 0;
+        }
+
+        .table-controls {
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .table-controls .info {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .table-controls .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 10px;
+            border: 1px solid #333;
+            text-align: left;
+            font-size: 0.8rem;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            background: rgba(40, 40, 40, 0.9);
+            color: #4a90e2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table td {
+            color: #b0b0b0;
+            word-wrap: break-word;
+            max-width: 200px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(74, 144, 226, 0.1);
+        }
+
+        .data-table tr.selected {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        .data-table .mandatory {
+            color: #ff4757;
+            font-weight: bold;
+        }
+
+        .data-table .optional {
+            color: #7bed9f;
+        }
+
+        .data-table .required {
+            color: #ff4757;
+            font-weight: bold;
+        }
+
+        .data-table .cell-content {
+            max-height: 60px;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .data-table .cell-content.expanded {
+            max-height: none;
+        }
+
+        .expand-btn {
+            color: #4a90e2;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        .expand-btn:hover {
+            color: #00ff88;
+        }
+
+        .column-toggle {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 6px;
+        }
+
+        .column-toggle h4 {
+            color: #4a90e2;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .column-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+        }
+
+        .column-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+
+        .column-checkbox input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            filter: brightness(1.3);
+        }
+
+        .node-circle {
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+
+        .node-text {
+            fill: #ffffff;
+            font-size: 10px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .link {
+            stroke: #555;
+            stroke-width: 1;
+            fill: none;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .link:hover {
+            stroke: #4a90e2;
+            opacity: 1;
+            stroke-width: 2;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 200px;
+        }
+
+        .legend h4 {
+            color: #4a90e2;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid #555;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #4a90e2;
+            border-radius: 6px;
+            padding: 10px;
+            color: #fff;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+
+        .upload-area {
+            border: 2px dashed #4a90e2;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .error-message {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid #ff4757;
+            border-radius: 6px;
+            padding: 15px;
+            color: #ff4757;
+            margin: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.9);
+            border-top: 1px solid #333;
+        }
+
+        .pagination button {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .pagination button:hover,
+        .pagination button.active {
+            background: rgba(74, 144, 226, 0.3);
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 300px;
+            }
+            
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ESG数据一体化可视化系统</h1>
+            <p>集成ESG问卷数据和披露标准的综合分析平台</p>
+            
+            <div class="mode-switcher">
+                <div class="mode-btn active" onclick="switchDataMode('questionnaire')">
+                    📊 ESG问卷数据
+                </div>
+                <div class="mode-btn" onclick="switchDataMode('standards')">
+                    📋 披露标准
+                </div>
+            </div>
+
+            <div class="controls">
+                <!-- 通用控件 -->
+                <div class="control-item">
+                    <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.csv,.jsonl,.json" style="display: none;">
+                    <button class="file-upload" onclick="document.getElementById('fileInput').click()">上传数据文件</button>
+                </div>
+
+                <!-- 问卷模式控件 -->
+                <div id="questionnaireControls" class="questionnaire-controls">
+                    <div class="control-item">
+                        <label>ESG领域:</label>
+                        <select class="control-select" id="domainSelect">
+                            <option value="all">全部领域</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>主题:</label>
+                        <select class="control-select" id="topicSelect">
+                            <option value="all">全部主题</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>必填项:</label>
+                        <select class="control-select" id="requiredSelect">
+                            <option value="all">全部</option>
+                            <option value="是">必填</option>
+                            <option value="否">非必填</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 标准模式控件 -->
+                <div id="standardsControls" class="standards-controls hidden">
+                    <div class="control-item">
+                        <label>标准:</label>
+                        <select class="control-select" id="standardSelect">
+                            <option value="all">全部标准</option>
+                            <option value="GRI">GRI</option>
+                            <option value="SASB">SASB</option>
+                            <option value="TCFD">TCFD</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>要求类型:</label>
+                        <select class="control-select" id="typeSelect">
+                            <option value="all">全部</option>
+                            <option value="mandatory">强制性</option>
+                            <option value="optional">可选性</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>行业:</label>
+                        <select class="control-select" id="industrySelect">
+                            <option value="all">全部行业</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 通用控件 -->
+                <div class="control-item">
+                    <label>搜索:</label>
+                    <input type="text" class="control-input" id="searchInput" placeholder="搜索内容...">
+                </div>
+
+                <div class="view-toggle">
+                    <button class="active" onclick="switchView('graph')">图谱视图</button>
+                    <button onclick="switchView('table')">表格视图</button>
+                </div>
+
+                <button class="control-btn hidden" onclick="resetView()" id="resetBtn">重置视图</button>
+                <button class="control-btn hidden" onclick="exportData()" id="exportBtn">导出数据</button>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div id="uploadArea" class="upload-area">
+                <h3 style="color: #4a90e2; margin-bottom: 15px;">上传数据文件</h3>
+                <div id="uploadInstructions">
+                    <p style="color: #b0b0b0; margin-bottom: 15px;">
+                        <strong>ESG问卷模式:</strong> 支持Excel文件(.xlsx, .xls)和CSV文件<br>
+                        表头应包含：ESG领域、主题、Key Issue、指标ID、指标名称等字段
+                    </p>
+                    <p style="color: #b0b0b0; margin-bottom: 15px;">
+                        <strong>披露标准模式:</strong> 支持JSONL格式文件<br>
+                        包含：clause_id、clause_content、mandatory_optional等字段
+                    </p>
+                </div>
+                <button class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    选择文件或拖拽到此处
+                </button>
+                <p style="color: #888; font-size: 0.8rem; margin-top: 10px;">
+                    支持同时上传多个文件，系统会自动识别文件类型
+                </p>
+            </div>
+            
+            <div class="loading hidden" id="loading">正在处理数据...</div>
+            
+            <div class="sidebar hidden" id="sidebar">
+                <h3 id="sidebarTitle">详细信息</h3>
+                <div class="info-panel" id="infoPanel">
+                    <h4>选择节点查看详情</h4>
+                    <p>点击图谱中的任意节点或表格中的行，查看详细信息</p>
+                </div>
+
+                <h3>数据统计</h3>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- 统计信息将动态生成 -->
+                </div>
+            </div>
+
+            <div class="content-area hidden" id="contentArea">
+                <div class="graph-container" id="graphContainer">
+                    <svg class="graph-canvas" id="graphCanvas"></svg>
+                    <div class="legend" id="legend">
+                        <!-- 图例将动态生成 -->
+                    </div>
+                </div>
+
+                <div class="table-container hidden" id="tableContainer">
+                    <div class="table-controls" id="tableControls">
+                        <div class="info" id="tableInfo">
+                            显示数据统计信息
+                        </div>
+                        <div class="controls">
+                            <select class="control-select" id="pageSizeSelect" onchange="changePageSize()">
+                                <option value="25">25条/页</option>
+                                <option value="50" selected>50条/页</option>
+                                <option value="100">100条/页</option>
+                                <option value="200">200条/页</option>
+                            </select>
+                            <button class="control-btn" onclick="toggleColumnSelector()">列设置</button>
+                        </div>
+                    </div>
+                    
+                    <div class="column-toggle hidden" id="columnSelector">
+                        <h4>选择显示列</h4>
+                        <div class="column-checkboxes" id="columnCheckboxes">
+                            <!-- 列选择器将动态生成 -->
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" id="tableWrapper">
+                        <div id="tableContent">
+                            <!-- 表格内容将动态生成 -->
+                        </div>
+                    </div>
+
+                    <div class="pagination" id="pagination">
+                        <!-- 分页将动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // 全局变量
+        let currentDataMode = 'questionnaire'; // 'questionnaire' 或 'standards'
+        let currentView = 'graph'; // 'graph' 或 'table'
+        let allData = [];
+        let filteredData = [];
+        let svg, g, simulation;
+        let selectedNode = null;
+        let currentPage = 1;
+        let itemsPerPage = 50;
+
+        // 问卷表格列配置
+        let questionnaireColumns = {
+            'indicatorId': { label: '指标ID', visible: true, width: '120px' },
+            'indicatorName': { label: '指标名称', visible: true, width: '200px' },
+            'esgDomain': { label: 'ESG领域', visible: true, width: '100px' },
+            'topic': { label: '主题', visible: true, width: '120px' },
+            'keyIssue': { label: '关键议题', visible: true, width: '150px' },
+            'description': { label: '指标描述', visible: true, width: '250px' },
+            'calculation': { label: '计算方法', visible: true, width: '200px' },
+            'dataCollection': { label: '数据收集指导', visible: true, width: '200px' },
+            'dataType': { label: '数据类型', visible: true, width: '100px' },
+            'unit': { label: '建议单位', visible: true, width: '100px' },
+            'required': { label: '是否必填', visible: true, width: '80px' },
+            'reference': { label: '参考标准', visible: true, width: '150px' },
+            'notes': { label: '披露注意事项', visible: true, width: '200px' },
+            'actualData': { label: '实际披露数据', visible: true, width: '150px' },
+            'reliability': { label: '数据可信度', visible: true, width: '100px' },
+            'sampleData': { label: '假数据', visible: false, width: '150px' },
+            'dataDescription': { label: '数据说明', visible: false, width: '200px' },
+            'dataRemarks': { label: '数据备注', visible: false, width: '200px' },
+            'sourceBatch': { label: '来源批次', visible: false, width: '100px' },
+            'relatedClauseId': { label: '相关条款ID', visible: false, width: '150px' },
+            'finalRemarks': { label: '最终备注', visible: false, width: '200px' }
+        };
+
+        // 标准表格列配置
+        let standardsColumns = {
+            'clause_id': { label: '条款ID', visible: true, width: '120px' },
+            'clause_content': { label: '条款内容', visible: true, width: '300px' },
+            'standard': { label: '标准', visible: true, width: '80px' },
+            'mandatory_optional': { label: '类型', visible: true, width: '80px' },
+            'applicable_industry': { label: '适用行业', visible: true, width: '120px' },
+            'related_topics': { label: '相关主题', visible: true, width: '200px' },
+            'related_clauses': { label: '相关条款', visible: true, width: '150px' },
+            'original_text': { label: '原始文本', visible: false, width: '300px' },
+            'auto_clause_number': { label: '自动编号', visible: false, width: '120px' }
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateUIForMode();
+        });
+
+        function setupEventListeners() {
+            // 文件上传
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            
+            // 拖拽上传
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+
+            // 筛选器
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('uploadArea').classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('uploadArea').classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            processFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            processFiles(files);
+        }
+
+        // 切换数据模式
+        function switchDataMode(mode) {
+            currentDataMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 更新界面
+            updateUIForMode();
+            
+            // 清空数据
+            allData = [];
+            filteredData = [];
+            resetInterface();
+        }
+
+        function updateUIForMode() {
+            const questionnaireControls = document.getElementById('questionnaireControls');
+            const standardsControls = document.getElementById('standardsControls');
+
+            if (currentDataMode === 'questionnaire') {
+                questionnaireControls.classList.remove('hidden');
+                standardsControls.classList.add('hidden');
+                document.getElementById('searchInput').placeholder = '搜索指标名称...';
+            } else {
+                questionnaireControls.classList.add('hidden');
+                standardsControls.classList.remove('hidden');
+                document.getElementById('searchInput').placeholder = '搜索条款内容...';
+            }
+        }
+
+        function resetInterface() {
+            document.getElementById('uploadArea').style.display = 'block';
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('sidebar').classList.add('hidden');
+            document.getElementById('contentArea').classList.add('hidden');
+            document.getElementById('resetBtn').classList.add('hidden');
+            document.getElementById('exportBtn').classList.add('hidden');
+        }
+
+        // 处理文件
+        async function processFiles(files) {
+            if (files.length === 0) return;
+
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('loading').textContent = `正在处理 ${files.length} 个文件...`;
+
+            allData = [];
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    document.getElementById('loading').textContent = `正在处理文件 ${i + 1}/${files.length}: ${file.name}`;
+                    
+                    if (currentDataMode === 'questionnaire') {
+                        await processQuestionnaireFile(file);
+                    } else {
+                        await processStandardsFile(file);
+                    }
+                }
+
+                if (allData.length === 0) {
+                    throw new Error('没有成功解析到任何数据');
+                }
+
+                document.getElementById('loading').textContent = `成功加载 ${allData.length} 条数据，正在生成可视化...`;
+                
+                // 初始化界面
+                initializeInterface();
+                setupModeFilters();
+                applyFilters();
+                
+                // 显示界面
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('contentArea').classList.remove('hidden');
+                document.getElementById('resetBtn').classList.remove('hidden');
+                document.getElementById('exportBtn').classList.remove('hidden');
+                
+                if (currentView === 'graph') {
+                    document.getElementById('graphContainer').classList.remove('hidden');
+                    document.getElementById('tableContainer').classList.add('hidden');
+                    initGraph();
+                } else {
+                    document.getElementById('graphContainer').classList.add('hidden');
+                    document.getElementById('tableContainer').classList.remove('hidden');
+                    generateTable();
+                }
+                
+            } catch (error) {
+                console.error('处理文件失败:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="error-message">
+                        <h3>文件处理失败</h3>
+                        <p>错误信息: ${error.message}</p>
+                        <p>请确保上传的文件格式正确</p>
+                        <button class="control-btn" onclick="location.reload()">重新开始</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 处理问卷文件
+        async function processQuestionnaireFile(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            const processedData = jsonData.map((row, index) => ({
+                id: index + 1,
+                type: 'questionnaire',
+                esgDomain: row['ESG领域'] || row['ESG_Domain'] || '',
+                topic: row['主题'] || row['Topic'] || '',
+                keyIssue: row['Key Issue'] || row['关键议题'] || '',
+                indicatorId: row['指标ID'] || row['Indicator_ID'] || '',
+                indicatorName: row['指标名称'] || row['Indicator_Name'] || '',
+                description: row['指标描述'] || row['Description'] || '',
+                calculation: row['计算方法'] || row['Calculation'] || '',
+                dataCollection: row['数据收集指导'] || row['Data_Collection'] || '',
+                dataType: row['数据类型'] || row['Data_Type'] || '',
+                unit: row['建议单位'] || row['Unit'] || '',
+                required: row['是否必填'] || row['Required'] || '',
+                reference: row['参考标准'] || row['Reference'] || '',
+                notes: row['披露注意事项'] || row['Notes'] || '',
+                sampleData: row['假数据'] || row['Sample_Data'] || '',
+                dataDescription: row['数据说明'] || row['Data_Description'] || '',
+                dataRemarks: row['数据备注'] || row['Data_Remarks'] || '',
+                reliability: row['数据可信度'] || row['Reliability'] || '',
+                sourceBatch: row['来源批次'] || row['Source_Batch'] || '',
+                relatedClauseId: row['相关条款ID'] || row['Related_Clause_ID'] || '',
+                actualData: row['实际披露数据'] || row['Actual_Data'] || '',
+                finalRemarks: row['最终备注'] || row['Final_Remarks'] || ''
+            }));
+
+            allData.push(...processedData);
+        }
+
+        // 处理标准文件
+        async function processStandardsFile(file) {
+            const text = await readFileAsText(file);
+            const lines = text.split('\n').filter(line => line.trim());
+            
+            // 确定标准类型
+            let standard = 'UNKNOWN';
+            if (file.name.includes('GRI')) standard = 'GRI';
+            else if (file.name.includes('SASB')) standard = 'SASB';
+            else if (file.name.includes('TCFD')) standard = 'TCFD';
+
+            const processedData = [];
+            for (const line of lines) {
+                try {
+                    const item = JSON.parse(line);
+                    processedData.push({
+                        ...item,
+                        type: 'standards',
+                        standard: item.standard || item.applicable_standard || standard
+                    });
+                } catch (parseError) {
+                    console.warn('解析行失败:', line, parseError);
+                }
+            }
+
+            allData.push(...processedData);
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        // 初始化界面
+        function initializeInterface() {
+            if (currentDataMode === 'questionnaire') {
+                initQuestionnaireInterface();
+            } else {
+                initStandardsInterface();
+            }
+            updateStats();
+            setupColumnSelector();
+        }
+
+        function initQuestionnaireInterface() {
+            // 填充ESG领域选择器
+            const domains = [...new Set(allData.map(d => d.esgDomain))].filter(d => d);
+            const domainSelect = document.getElementById('domainSelect');
+            domainSelect.innerHTML = '<option value="all">全部领域</option>';
+            domains.forEach(domain => {
+                const option = document.createElement('option');
+                option.value = domain;
+                option.textContent = domain;
+                domainSelect.appendChild(option);
+            });
+
+            // 填充主题选择器
+            const topics = [...new Set(allData.map(d => d.topic))].filter(d => d);
+            const topicSelect = document.getElementById('topicSelect');
+            topicSelect.innerHTML = '<option value="all">全部主题</option>';
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic;
+                topicSelect.appendChild(option);
+            });
+
+            document.getElementById('sidebarTitle').textContent = '指标详情';
+        }
+
+        function initStandardsInterface() {
+            // 填充行业选择器
+            const industries = [...new Set(allData.map(d => d.applicable_industry))].filter(d => d);
+            const industrySelect = document.getElementById('industrySelect');
+            industrySelect.innerHTML = '<option value="all">全部行业</option>';
+            industries.forEach(industry => {
+                if (industry && industry !== 'general') {
+                    const option = document.createElement('option');
+                    option.value = industry;
+                    option.textContent = industry;
+                    industrySelect.appendChild(option);
+                }
+            });
+
+            // 填充标准选择器
+            const standards = [...new Set(allData.map(d => d.standard))].filter(d => d);
+            const standardSelect = document.getElementById('standardSelect');
+            standardSelect.innerHTML = '<option value="all">全部标准</option>';
+            standards.forEach(standard => {
+                const option = document.createElement('option');
+                option.value = standard;
+                option.textContent = standard;
+                standardSelect.appendChild(option);
+            });
+
+            document.getElementById('sidebarTitle').textContent = '条款详情';
+        }
+
+        function setupModeFilters() {
+            // 移除旧的事件监听器
+            const selects = document.querySelectorAll('.control-select');
+            selects.forEach(select => {
+                select.removeEventListener('change', applyFilters);
+                select.addEventListener('change', applyFilters);
+            });
+        }
+
+        // 设置列选择器
+        function setupColumnSelector() {
+            const columns = currentDataMode === 'questionnaire' ? questionnaireColumns : standardsColumns;
+            const container = document.getElementById('columnCheckboxes');
+            
+            container.innerHTML = '';
+            Object.keys(columns).forEach(key => {
+                const div = document.createElement('div');
+                div.className = 'column-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="col_${key}" ${columns[key].visible ? 'checked' : ''} 
+                           onchange="toggleColumn('${key}')">
+                    <label for="col_${key}">${columns[key].label}</label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleColumn(columnKey) {
+            const columns = currentDataMode === 'questionnaire' ? questionnaireColumns : standardsColumns;
+            columns[columnKey].visible = !columns[columnKey].visible;
+            generateTable();
+        }
+
+        function toggleColumnSelector() {
+            const selector = document.getElementById('columnSelector');
+            selector.classList.toggle('hidden');
+        }
+
+        function changePageSize() {
+            itemsPerPage = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            generateTable();
+        }
+
+        // 应用筛选
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            if (currentDataMode === 'questionnaire') {
+                applyQuestionnaireFilters(search);
+            } else {
+                applyStandardsFilters(search);
+            }
+
+            updateStats();
+            currentPage = 1; // 重置页码
+
+            if (currentView === 'graph' && svg) {
+                updateGraph();
+            } else if (currentView === 'table') {
+                generateTable();
+            }
+        }
+
+        function applyQuestionnaireFilters(search) {
+            const domain = document.getElementById('domainSelect').value;
+            const topic = document.getElementById('topicSelect').value;
+            const required = document.getElementById('requiredSelect').value;
+
+            filteredData = allData.filter(item => {
+                if (domain !== 'all' && item.esgDomain !== domain) return false;
+                if (topic !== 'all' && item.topic !== topic) return false;
+                if (required !== 'all' && item.required !== required) return false;
+                if (search && !item.indicatorName.toLowerCase().includes(search) && 
+                    !item.description.toLowerCase().includes(search)) return false;
+                return true;
+            });
+        }
+
+        function applyStandardsFilters(search) {
+            const standard = document.getElementById('standardSelect').value;
+            const type = document.getElementById('typeSelect').value;
+            const industry = document.getElementById('industrySelect').value;
+
+            filteredData = allData.filter(item => {
+                if (standard !== 'all' && item.standard !== standard) return false;
+                if (type !== 'all' && item.mandatory_optional !== type) return false;
+                if (industry !== 'all' && item.applicable_industry !== industry) return false;
+                if (search && !item.clause_content.toLowerCase().includes(search) && 
+                    !item.original_text.toLowerCase().includes(search)) return false;
+                return true;
+            });
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            if (currentDataMode === 'questionnaire') {
+                updateQuestionnaireStats(statsGrid);
+            } else {
+                updateStandardsStats(statsGrid);
+            }
+        }
+
+        function updateQuestionnaireStats(statsGrid) {
+            const requiredCount = filteredData.filter(d => d.required === '是').length;
+            const domains = new Set(filteredData.map(d => d.esgDomain).filter(d => d));
+            const types = new Set(filteredData.map(d => d.dataType).filter(d => d));
+            const withData = filteredData.filter(d => d.actualData && d.actualData.trim()).length;
+            const completionRate = filteredData.length > 0 ? Math.round((withData / filteredData.length) * 100) : 0;
+            const reliabilityValues = filteredData.map(d => parseFloat(d.reliability)).filter(v => !isNaN(v));
+            const avgReliability = reliabilityValues.length > 0 ? 
+                (reliabilityValues.reduce((a, b) => a + b, 0) / reliabilityValues.length).toFixed(1) : 0;
+
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${filteredData.length}</div>
+                    <div class="stat-label">指标总数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${requiredCount}</div>
+                    <div class="stat-label">必填指标</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${domains.size}</div>
+                    <div class="stat-label">ESG领域</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${types.size}</div>
+                    <div class="stat-label">数据类型</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${completionRate}%</div>
+                    <div class="stat-label">填报率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${avgReliability}</div>
+                    <div class="stat-label">平均可信度</div>
+                </div>
+            `;
+        }
+
+        function updateStandardsStats(statsGrid) {
+            const mandatoryCount = filteredData.filter(d => d.mandatory_optional === 'mandatory').length;
+            const optionalCount = filteredData.filter(d => d.mandatory_optional === 'optional').length;
+            const standards = new Set(filteredData.map(d => d.standard).filter(d => d));
+            const topics = new Set();
+            filteredData.forEach(d => {
+                if (d.related_topics) {
+                    d.related_topics.split(',').forEach(topic => topics.add(topic.trim()));
+                }
+            });
+
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${filteredData.length}</div>
+                    <div class="stat-label">条款总数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${mandatoryCount}</div>
+                    <div class="stat-label">强制性</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${optionalCount}</div>
+                    <div class="stat-label">可选性</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${standards.size}</div>
+                    <div class="stat-label">标准数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${topics.size}</div>
+                    <div class="stat-label">主题数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${Math.round((mandatoryCount / Math.max(filteredData.length, 1)) * 100)}%</div>
+                    <div class="stat-label">强制性比例</div>
+                </div>
+            `;
+        }
+
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.view-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (view === 'graph') {
+                document.getElementById('graphContainer').classList.remove('hidden');
+                document.getElementById('tableContainer').classList.add('hidden');
+                if (allData.length > 0 && !svg) {
+                    initGraph();
+                } else if (svg) {
+                    updateGraph();
+                }
+            } else {
+                document.getElementById('graphContainer').classList.add('hidden');
+                document.getElementById('tableContainer').classList.remove('hidden');
+                generateTable();
+            }
+        }
+
+        // 生成图谱数据
+        function generateGraphData() {
+            if (currentDataMode === 'questionnaire') {
+                return generateQuestionnaireGraphData();
+            } else {
+                return generateStandardsGraphData();
+            }
+        }
+
+        function generateQuestionnaireGraphData() {
+            const nodes = [];
+            const links = [];
+            const nodeMap = new Map();
+
+            // 创建ESG领域节点
+            const domains = [...new Set(filteredData.map(d => d.esgDomain))].filter(d => d);
+            domains.forEach(domain => {
+                const node = { id: `domain_${domain}`, name: domain, type: 'esg-domain', group: 'domain' };
+                nodes.push(node);
+                nodeMap.set(node.id, node);
+            });
+
+            // 创建主题节点
+            const topics = [...new Set(filteredData.map(d => d.topic))].filter(d => d);
+            topics.forEach(topic => {
+                const node = {
+                    id: `topic_${topic}`,
+                    name: topic.length > 12 ? topic.substring(0, 10) + '...' : topic,
+                    fullName: topic,
+                    type: 'topic',
+                    group: 'topic'
+                };
+                nodes.push(node);
+                nodeMap.set(node.id, node);
+            });
+
+            // 采样指标
+            let indicatorsToShow = filteredData;
+            if (filteredData.length > 150) {
+                indicatorsToShow = filteredData.sort(() => 0.5 - Math.random()).slice(0, 150);
+            }
+
+            // 创建指标节点
+            indicatorsToShow.forEach(indicator => {
+                const indicatorNode = {
+                    id: `indicator_${indicator.indicatorId}`,
+                    name: indicator.indicatorId,
+                    fullName: indicator.indicatorName,
+                    type: indicator.required === '是' ? 'required' : 'optional',
+                    group: 'indicator',
+                    data: indicator
+                };
+                nodes.push(indicatorNode);
+                nodeMap.set(indicatorNode.id, indicatorNode);
+
+                // 建立连接
+                if (indicator.esgDomain) {
+                    const domainId = `domain_${indicator.esgDomain}`;
+                    if (nodeMap.has(domainId)) {
+                        links.push({ source: domainId, target: indicatorNode.id, type: 'domain_indicator' });
+                    }
+                }
+
+                if (indicator.topic) {
+                    const topicId = `topic_${indicator.topic}`;
+                    if (nodeMap.has(topicId)) {
+                        links.push({ source: topicId, target: indicatorNode.id, type: 'topic_indicator' });
+                    }
+                }
+            });
+
+            return { nodes, links };
+        }
+
+        function generateStandardsGraphData() {
+            const nodes = [];
+            const links = [];
+            const nodeMap = new Map();
+
+            // 创建标准节点
+            const standards = [...new Set(filteredData.map(d => d.standard))].filter(d => d);
+            standards.forEach(standard => {
+                const node = { id: `standard_${standard}`, name: standard, type: 'standard', group: standard };
+                nodes.push(node);
+                nodeMap.set(node.id, node);
+            });
+
+            // 创建主题节点
+            const topics = new Set();
+            filteredData.forEach(d => {
+                if (d.related_topics) {
+                    d.related_topics.split(',').forEach(topic => {
+                        const trimmedTopic = topic.trim();
+                        if (trimmedTopic && trimmedTopic.length > 1) topics.add(trimmedTopic);
+                    });
+                }
+            });
+
+            // 只保留频繁出现的主题
+            const topicFreq = new Map();
+            filteredData.forEach(d => {
+                if (d.related_topics) {
+                    d.related_topics.split(',').forEach(topic => {
+                        const trimmedTopic = topic.trim();
+                        if (trimmedTopic && trimmedTopic.length > 1) {
+                            topicFreq.set(trimmedTopic, (topicFreq.get(trimmedTopic) || 0) + 1);
+                        }
+                    });
+                }
+            });
+
+            const frequentTopics = Array.from(topicFreq.entries())
+                .filter(([topic, freq]) => freq > 1)
+                .map(([topic, freq]) => topic);
+
+            frequentTopics.forEach(topic => {
+                const node = {
+                    id: `topic_${topic}`,
+                    name: topic.length > 15 ? topic.substring(0, 12) + '...' : topic,
+                    fullName: topic,
+                    type: 'topic',
+                    group: 'topic'
+                };
+                nodes.push(node);
+                nodeMap.set(node.id, node);
+            });
+
+            // 采样条款
+            let clausesToShow = filteredData;
+            if (filteredData.length > 200) {
+                clausesToShow = filteredData.sort(() => 0.5 - Math.random()).slice(0, 200);
+            }
+
+            // 创建条款节点
+            clausesToShow.forEach(clause => {
+                const clauseNode = {
+                    id: `clause_${clause.clause_id}`,
+                    name: clause.clause_id,
+                    type: clause.mandatory_optional || 'unknown',
+                    group: clause.standard,
+                    data: clause
+                };
+                nodes.push(clauseNode);
+                nodeMap.set(clauseNode.id, clauseNode);
+
+                // 建立连接
+                const standardId = `standard_${clause.standard}`;
+                if (nodeMap.has(standardId)) {
+                    links.push({ source: standardId, target: clauseNode.id, type: 'standard_clause' });
+                }
+
+                if (clause.related_topics) {
+                    clause.related_topics.split(',').forEach(topic => {
+                        const trimmedTopic = topic.trim();
+                        if (frequentTopics.includes(trimmedTopic)) {
+                            const topicId = `topic_${trimmedTopic}`;
+                            if (nodeMap.has(topicId)) {
+                                links.push({ source: topicId, target: clauseNode.id, type: 'topic_clause' });
+                            }
+                        }
+                    });
+                }
+            });
+
+            return { nodes, links };
+        }
+
+        // 初始化图谱
+        function initGraph() {
+            const container = document.getElementById('graphCanvas');
+            const rect = container.getBoundingClientRect();
+            
+            svg = d3.select('#graphCanvas')
+                .attr('width', rect.width)
+                .attr('height', rect.height);
+
+            g = svg.append('g');
+
+            // 添加缩放和拖拽
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // 创建力导向布局
+            simulation = d3.forceSimulation()
+                .force('link', d3.forceLink().id(d => d.id).distance(80))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(rect.width / 2, rect.height / 2))
+                .force('collision', d3.forceCollide().radius(20));
+
+            updateGraph();
+            updateLegend();
+        }
+
+        // 更新图谱
+        function updateGraph() {
+            if (!svg) return;
+
+            const graphData = generateGraphData();
+            const { nodes, links } = graphData;
+
+            // 清空现有内容
+            g.selectAll('*').remove();
+
+            // 绘制连线
+            const link = g.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .style('stroke', d => {
+                    switch(d.type) {
+                        case 'domain_indicator': return '#00ff88';
+                        case 'topic_indicator': return '#ff6b6b';
+                        case 'standard_clause': return '#4a90e2';
+                        case 'topic_clause': return '#ff6b6b';
+                        default: return '#555';
+                    }
+                })
+                .style('stroke-width', 2)
+                .style('opacity', 0.6);
+
+            // 绘制节点
+            const node = g.append('g')
+                .selectAll('.node')
+                .data(nodes)
+                .enter().append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended))
+                .on('click', selectNode)
+                .on('mouseover', showTooltip)
+                .on('mouseout', hideTooltip);
+
+            // 节点圆圈
+            node.append('circle')
+                .attr('class', d => `node-circle ${d.type}`)
+                .attr('r', d => {
+                    switch(d.type) {
+                        case 'esg-domain': case 'standard': return 25;
+                        case 'topic': return 18;
+                        case 'key-issue': return 15;
+                        case 'required': case 'mandatory': return 8;
+                        case 'optional': return 8;
+                        default: return 10;
+                    }
+                })
+                .style('fill', d => getNodeColor(d.type))
+                .style('stroke', '#4a90e2')
+                .style('stroke-width', 2);
+
+            // 节点文字
+            node.append('text')
+                .attr('class', 'node-text')
+                .text(d => {
+                    if (d.type === 'required' || d.type === 'optional' || d.type === 'mandatory') {
+                        return '';
+                    }
+                    return d.name;
+                })
+                .style('fill', '#ffffff')
+                .style('font-size', d => d.type === 'esg-domain' || d.type === 'standard' ? '12px' : '10px')
+                .style('text-anchor', 'middle')
+                .style('dominant-baseline', 'central')
+                .style('pointer-events', 'none');
+
+            // 更新力导向布局
+            simulation.nodes(nodes);
+            simulation.force('link').links(links);
+            simulation.alpha(1).restart();
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+        }
+
+        function getNodeColor(type) {
+            const colors = {
+                'esg-domain': '#00ff88',
+                'standard': '#00ff88',
+                'topic': '#ff6b6b',
+                'key-issue': '#ffd93d',
+                'required': '#ff4757',
+                'mandatory': '#ff4757',
+                'optional': '#7bed9f'
+            };
+            return colors[type] || '#4a90e2';
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('legend');
+            
+            if (currentDataMode === 'questionnaire') {
+                legend.innerHTML = `
+                    <h4>节点类型</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff88;"></div>
+                        <span>ESG领域</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>主题</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4757;"></div>
+                        <span>必填指标</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #7bed9f;"></div>
+                        <span>可选指标</span>
+                    </div>
+                `;
+            } else {
+                legend.innerHTML = `
+                    <h4>节点类型</h4>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff88;"></div>
+                        <span>披露标准</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>相关主题</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4757;"></div>
+                        <span>强制性条款</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #7bed9f;"></div>
+                        <span>可选性条款</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 生成表格
+        function generateTable() {
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            // 更新表格信息
+            document.getElementById('tableInfo').textContent = 
+                `显示第 ${startIndex + 1} - ${endIndex} 条，共 ${totalItems} 条数据`;
+
+            let tableHTML = '';
+
+            if (currentDataMode === 'questionnaire') {
+                tableHTML = generateQuestionnaireTable(pageData);
+            } else {
+                tableHTML = generateStandardsTable(pageData);
+            }
+
+            document.getElementById('tableContent').innerHTML = tableHTML;
+
+            // 生成分页
+            generatePagination(currentPage, totalPages, totalItems);
+
+            // 添加行点击事件
+            const rows = document.querySelectorAll('.data-table tbody tr');
+            rows.forEach((row, index) => {
+                row.addEventListener('click', () => {
+                    rows.forEach(r => r.classList.remove('selected'));
+                    row.classList.add('selected');
+                    updateInfoPanel(pageData[index]);
+                });
+            });
+        }
+
+        function generateQuestionnaireTable(data) {
+            const visibleColumns = Object.keys(questionnaireColumns).filter(key => questionnaireColumns[key].visible);
+            
+            let html = `<table class="data-table"><thead><tr>`;
+            
+            // 生成表头
+            visibleColumns.forEach(key => {
+                html += `<th style="min-width: ${questionnaireColumns[key].width}">${questionnaireColumns[key].label}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // 生成数据行
+            data.forEach(item => {
+                html += '<tr>';
+                visibleColumns.forEach(key => {
+                    let value = item[key] || '';
+                    let cellClass = '';
+                    let cellContent = '';
+
+                    // 特殊处理某些字段
+                    if (key === 'required') {
+                        cellClass = value === '是' ? 'required' : '';
+                    }
+
+                    // 处理长文本字段
+                    if (['description', 'calculation', 'dataCollection', 'notes'].includes(key) && value.length > 100) {
+                        const shortText = value.substring(0, 100) + '...';
+                        cellContent = `
+                            <div class="cell-content" id="cell_${item.id}_${key}">
+                                ${shortText}
+                            </div>
+                            <span class="expand-btn" onclick="toggleCellExpansion('${item.id}', '${key}', \`${value.replace(/`/g, '\\`')}\`)">
+                                展开
+                            </span>
+                        `;
+                    } else {
+                        cellContent = value;
+                    }
+
+                    html += `<td class="${cellClass}" title="${value}">${cellContent}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function generateStandardsTable(data) {
+            const visibleColumns = Object.keys(standardsColumns).filter(key => standardsColumns[key].visible);
+            
+            let html = `<table class="data-table"><thead><tr>`;
+            
+            // 生成表头
+            visibleColumns.forEach(key => {
+                html += `<th style="min-width: ${standardsColumns[key].width}">${standardsColumns[key].label}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // 生成数据行
+            data.forEach(item => {
+                html += '<tr>';
+                visibleColumns.forEach(key => {
+                    let value = item[key] || '';
+                    let cellClass = '';
+                    let cellContent = '';
+
+                    // 特殊处理某些字段
+                    if (key === 'mandatory_optional') {
+                        cellClass = value;
+                        value = value === 'mandatory' ? '强制性' : '可选性';
+                    }
+
+                    // 处理长文本字段
+                    if (['clause_content', 'original_text'].includes(key) && value.length > 150) {
+                        const shortText = value.substring(0, 150) + '...';
+                        cellContent = `
+                            <div class="cell-content" id="cell_${item.clause_id}_${key}">
+                                ${shortText}
+                            </div>
+                            <span class="expand-btn" onclick="toggleCellExpansion('${item.clause_id}', '${key}', \`${value.replace(/`/g, '\\`')}\`)">
+                                展开
+                            </span>
+                        `;
+                    } else {
+                        cellContent = value;
+                    }
+
+                    html += `<td class="${cellClass}" title="${value}">${cellContent}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function toggleCellExpansion(id, key, fullText) {
+            const cell = document.getElementById(`cell_${id}_${key}`);
+            const expandBtn = cell.nextElementSibling;
+            
+            if (cell.classList.contains('expanded')) {
+                // 收起
+                const shortText = fullText.substring(0, currentDataMode === 'questionnaire' ? 100 : 150) + '...';
+                cell.innerHTML = shortText;
+                cell.classList.remove('expanded');
+                expandBtn.textContent = '展开';
+            } else {
+                // 展开
+                cell.innerHTML = fullText;
+                cell.classList.add('expanded');
+                expandBtn.textContent = '收起';
+            }
+        }
+
+        function generatePagination(current, total, totalItems) {
+            const pagination = document.getElementById('pagination');
+            let html = '';
+
+            if (current > 1) {
+                html += `<button onclick="changePage(${current - 1})">上一页</button>`;
+            }
+
+            const startPage = Math.max(1, current - 2);
+            const endPage = Math.min(total, current + 2);
+
+            if (startPage > 1) {
+                html += `<button onclick="changePage(1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<button disabled>...</button>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="${i === current ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+
+            if (endPage < total) {
+                if (endPage < total - 1) {
+                    html += `<button disabled>...</button>`;
+                }
+                html += `<button onclick="changePage(${total})">${total}</button>`;
+            }
+
+            if (current < total) {
+                html += `<button onclick="changePage(${current + 1})">下一页</button>`;
+            }
+
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            generateTable();
+        }
+
+        // 选择节点/更新信息面板
+        function selectNode(event, d) {
+            selectedNode = d;
+            
+            // 高亮选中节点
+            g.selectAll('.node-circle').style('stroke-width', 2);
+            d3.select(event.currentTarget).select('.node-circle').style('stroke-width', 4);
+
+            updateInfoPanel(d.data || d);
+        }
+
+        function updateInfoPanel(data) {
+            const infoPanel = document.getElementById('infoPanel');
+            
+            if (currentDataMode === 'questionnaire') {
+                updateQuestionnaireInfo(infoPanel, data);
+            } else {
+                updateStandardsInfo(infoPanel, data);
+            }
+        }
+
+        function updateQuestionnaireInfo(panel, data) {
+            if (data.indicatorId) {
+                // 指标数据
+                panel.innerHTML = `
+                    <h4>${data.indicatorName}</h4>
+                    <div class="field">
+                        <div class="field-label">指标ID:</div>
+                        <div class="field-value">${data.indicatorId}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">ESG领域:</div>
+                        <div class="field-value">${data.esgDomain}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">主题:</div>
+                        <div class="field-value">${data.topic}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">关键议题:</div>
+                        <div class="field-value">${data.keyIssue}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">指标描述:</div>
+                        <div class="field-value">${data.description}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">计算方法:</div>
+                        <div class="field-value">${data.calculation}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">数据收集指导:</div>
+                        <div class="field-value">${data.dataCollection}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">数据类型:</div>
+                        <div class="field-value">${data.dataType}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">是否必填:</div>
+                        <div class="field-value" style="color: ${data.required === '是' ? '#ff4757' : '#7bed9f'}">${data.required}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">建议单位:</div>
+                        <div class="field-value">${data.unit}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">参考标准:</div>
+                        <div class="field-value">${data.reference}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">披露注意事项:</div>
+                        <div class="field-value">${data.notes}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">实际披露数据:</div>
+                        <div class="field-value" style="color: ${data.actualData ? '#00ff88' : '#ff4757'}">${data.actualData || '未填报'}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">数据可信度:</div>
+                        <div class="field-value">${data.reliability}</div>
+                    </div>
+                `;
+            } else {
+                // 分类节点
+                panel.innerHTML = `
+                    <h4>${data.fullName || data.name}</h4>
+                    <div class="field">
+                        <div class="field-label">类型:</div>
+                        <div class="field-value">${data.type === 'esg-domain' ? 'ESG领域' : '主题'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStandardsInfo(panel, data) {
+            if (data.clause_id) {
+                // 条款数据
+                panel.innerHTML = `
+                    <h4>${data.clause_id}</h4>
+                    <div class="field">
+                        <div class="field-label">条款内容:</div>
+                        <div class="field-value">${data.clause_content}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">原始文本:</div>
+                        <div class="field-value">${data.original_text}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">类型:</div>
+                        <div class="field-value">${data.mandatory_optional === 'mandatory' ? '强制性' : '可选性'}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">适用标准:</div>
+                        <div class="field-value">${data.standard}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">适用行业:</div>
+                        <div class="field-value">${data.applicable_industry}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">相关主题:</div>
+                        <div class="field-value">${data.related_topics || '无'}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">相关条款:</div>
+                        <div class="field-value">${data.related_clauses || '无'}</div>
+                    </div>
+                    <div class="field">
+                        <div class="field-label">自动编号:</div>
+                        <div class="field-value">${data.auto_clause_number}</div>
+                    </div>
+                `;
+            } else {
+                // 分类节点
+                panel.innerHTML = `
+                    <h4>${data.fullName || data.name}</h4>
+                    <div class="field">
+                        <div class="field-label">类型:</div>
+                        <div class="field-value">${data.type === 'standard' ? '披露标准' : '相关主题'}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示提示信息
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            let content = `<strong>${d.fullName || d.name}</strong><br>类型: ${d.type}`;
+            
+            if (d.data) {
+                if (currentDataMode === 'questionnaire') {
+                    content += `<br>描述: ${d.data.description.substring(0, 80)}...`;
+                    content += `<br>必填: ${d.data.required}`;
+                } else {
+                    content += `<br>内容: ${d.data.clause_content.substring(0, 80)}...`;
+                    content += `<br>类型: ${d.data.mandatory_optional}`;
+                }
+            }
+            
+            tooltip.innerHTML = content;
+            tooltip.style.opacity = 1;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+
+        // 拖拽函数
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // 重置视图
+        function resetView() {
+            if (svg) {
+                svg.transition().duration(750)
+                    .call(d3.zoom().transform, d3.zoomIdentity);
+            }
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(filteredData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `esg_${currentDataMode}_filtered.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 窗口大小改变时重新调整
+        window.addEventListener('resize', function() {
+            if (svg) {
+                const container = document.getElementById('graphCanvas');
+                const rect = container.getBoundingClientRect();
+                svg.attr('width', rect.width).attr('height', rect.height);
+                simulation.force('center', d3.forceCenter(rect.width / 2, rect.height / 2));
+                simulation.alpha(1).restart();
+            }
+        });
+    </script>
+</body>
+</html>

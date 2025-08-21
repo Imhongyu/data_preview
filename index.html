@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESG数据一体化可视化系统</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -46,6 +51,34 @@
             color: #b0b0b0;
             font-size: 1rem;
             margin-bottom: 15px;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .nav-btn {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 10px 20px;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn.active {
+            background: rgba(74, 144, 226, 0.3);
+            border-color: #4a90e2;
+            color: #4a90e2;
+        }
+
+        .nav-btn:hover {
+            border-color: #4a90e2;
+            color: #4a90e2;
         }
 
         .mode-switcher {
@@ -124,21 +157,6 @@
         .control-btn:hover {
             background: rgba(74, 144, 226, 0.4);
             color: #fff;
-        }
-
-        .file-upload {
-            background: rgba(0, 255, 136, 0.2);
-            border: 1px solid #00ff88;
-            border-radius: 6px;
-            padding: 8px 15px;
-            color: #00ff88;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .file-upload:hover {
-            background: rgba(0, 255, 136, 0.4);
         }
 
         .view-toggle {
@@ -505,26 +523,6 @@
             word-wrap: break-word;
         }
 
-        .upload-area {
-            border: 2px dashed #4a90e2;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            margin: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .upload-area:hover {
-            border-color: #00ff88;
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        .upload-area.dragover {
-            border-color: #00ff88;
-            background: rgba(0, 255, 136, 0.2);
-        }
-
         .error-message {
             background: rgba(255, 71, 87, 0.2);
             border: 1px solid #ff4757;
@@ -562,6 +560,165 @@
             color: #4a90e2;
         }
 
+        /* Markdown 区域样式 */
+        .markdown-area {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(10, 10, 10, 0.5);
+        }
+
+        .markdown-content {
+            background: rgba(20, 20, 20, 0.9);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .markdown-content h1 {
+            color: #4a90e2;
+            border-bottom: 3px solid #4a90e2;
+            padding-bottom: 10px;
+            margin: 30px 0 20px 0;
+            font-size: 2.5em;
+        }
+
+        .markdown-content h2 {
+            color: #00ff88;
+            border-left: 4px solid #00ff88;
+            padding-left: 15px;
+            margin: 25px 0 15px 0;
+            font-size: 2em;
+        }
+
+        .markdown-content h3 {
+            color: #ff6b6b;
+            margin: 20px 0 10px 0;
+            font-size: 1.5em;
+        }
+
+        .markdown-content p {
+            margin: 15px 0;
+            text-align: justify;
+            font-size: 16px;
+            color: #b0b0b0;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(40, 40, 40, 0.6);
+        }
+
+        .markdown-content th {
+            background: rgba(74, 144, 226, 0.8);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .markdown-content td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            color: #b0b0b0;
+        }
+
+        .markdown-content tr:nth-child(even) {
+            background-color: rgba(40, 40, 40, 0.3);
+        }
+
+        .markdown-content tr:hover {
+            background-color: rgba(74, 144, 226, 0.2);
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid #4a90e2;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+            color: #b0b0b0;
+        }
+
+        .markdown-content code {
+            background: rgba(40, 40, 40, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #00ff88;
+        }
+
+        .markdown-content pre {
+            background: rgba(40, 40, 40, 0.8);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .markdown-content pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 10px;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            font-weight: 600;
+        }
+
+        .toc {
+            background: rgba(40, 40, 40, 0.6);
+            border: 1px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .toc h3 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #4a90e2;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .toc a:hover {
+            background: #4a90e2;
+            color: white;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -594,111 +751,96 @@
             <h1>ESG数据一体化可视化系统</h1>
             <p>集成ESG问卷数据和披露标准的综合分析平台</p>
             
-            <div class="mode-switcher">
-                <div class="mode-btn active" onclick="switchDataMode('questionnaire')">
-                    📊 ESG问卷数据
+            <div class="main-nav">
+                <div class="nav-btn active" onclick="switchMainMode('data')">
+                    📊 数据分析
                 </div>
-                <div class="mode-btn" onclick="switchDataMode('standards')">
-                    📋 披露标准
+                <div class="nav-btn" onclick="switchMainMode('report')">
+                    📄 报告展示
                 </div>
             </div>
 
-            <div class="controls">
-                <!-- 通用控件 -->
-                <div class="control-item">
-                    <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.csv,.jsonl,.json" style="display: none;">
-                    <button class="file-upload" onclick="document.getElementById('fileInput').click()">上传数据文件</button>
-                </div>
-
-                <!-- 问卷模式控件 -->
-                <div id="questionnaireControls" class="questionnaire-controls">
-                    <div class="control-item">
-                        <label>ESG领域:</label>
-                        <select class="control-select" id="domainSelect">
-                            <option value="all">全部领域</option>
-                        </select>
+            <div id="dataControls" class="data-controls">
+                <div class="mode-switcher">
+                    <div class="mode-btn active" onclick="switchDataMode('questionnaire')">
+                        📊 ESG问卷数据
                     </div>
-                    <div class="control-item">
-                        <label>主题:</label>
-                        <select class="control-select" id="topicSelect">
-                            <option value="all">全部主题</option>
-                        </select>
-                    </div>
-                    <div class="control-item">
-                        <label>必填项:</label>
-                        <select class="control-select" id="requiredSelect">
-                            <option value="all">全部</option>
-                            <option value="是">必填</option>
-                            <option value="否">非必填</option>
-                        </select>
+                    <div class="mode-btn" onclick="switchDataMode('standards')">
+                        📋 披露标准
                     </div>
                 </div>
 
-                <!-- 标准模式控件 -->
-                <div id="standardsControls" class="standards-controls hidden">
-                    <div class="control-item">
-                        <label>标准:</label>
-                        <select class="control-select" id="standardSelect">
-                            <option value="all">全部标准</option>
-                            <option value="GRI">GRI</option>
-                            <option value="SASB">SASB</option>
-                            <option value="TCFD">TCFD</option>
-                        </select>
+                <div class="controls">
+                    <!-- 问卷模式控件 -->
+                    <div id="questionnaireControls" class="questionnaire-controls">
+                        <div class="control-item">
+                            <label>ESG领域:</label>
+                            <select class="control-select" id="domainSelect">
+                                <option value="all">全部领域</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>主题:</label>
+                            <select class="control-select" id="topicSelect">
+                                <option value="all">全部主题</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>必填项:</label>
+                            <select class="control-select" id="requiredSelect">
+                                <option value="all">全部</option>
+                                <option value="是">必填</option>
+                                <option value="否">非必填</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="control-item">
-                        <label>要求类型:</label>
-                        <select class="control-select" id="typeSelect">
-                            <option value="all">全部</option>
-                            <option value="mandatory">强制性</option>
-                            <option value="optional">可选性</option>
-                        </select>
+
+                    <!-- 标准模式控件 -->
+                    <div id="standardsControls" class="standards-controls hidden">
+                        <div class="control-item">
+                            <label>标准:</label>
+                            <select class="control-select" id="standardSelect">
+                                <option value="all">全部标准</option>
+                                <option value="GRI">GRI</option>
+                                <option value="SASB">SASB</option>
+                                <option value="TCFD">TCFD</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>要求类型:</label>
+                            <select class="control-select" id="typeSelect">
+                                <option value="all">全部</option>
+                                <option value="mandatory">强制性</option>
+                                <option value="optional">可选性</option>
+                            </select>
+                        </div>
+                        <div class="control-item">
+                            <label>行业:</label>
+                            <select class="control-select" id="industrySelect">
+                                <option value="all">全部行业</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <!-- 通用控件 -->
                     <div class="control-item">
-                        <label>行业:</label>
-                        <select class="control-select" id="industrySelect">
-                            <option value="all">全部行业</option>
-                        </select>
+                        <label>搜索:</label>
+                        <input type="text" class="control-input" id="searchInput" placeholder="搜索内容...">
                     </div>
-                </div>
 
-                <!-- 通用控件 -->
-                <div class="control-item">
-                    <label>搜索:</label>
-                    <input type="text" class="control-input" id="searchInput" placeholder="搜索内容...">
-                </div>
+                    <div class="view-toggle">
+                        <button class="active" onclick="switchView('graph')">图谱视图</button>
+                        <button onclick="switchView('table')">表格视图</button>
+                    </div>
 
-                <div class="view-toggle">
-                    <button class="active" onclick="switchView('graph')">图谱视图</button>
-                    <button onclick="switchView('table')">表格视图</button>
+                    <button class="control-btn hidden" onclick="resetView()" id="resetBtn">重置视图</button>
+                    <button class="control-btn hidden" onclick="exportData()" id="exportBtn">导出数据</button>
                 </div>
-
-                <button class="control-btn hidden" onclick="resetView()" id="resetBtn">重置视图</button>
-                <button class="control-btn hidden" onclick="exportData()" id="exportBtn">导出数据</button>
             </div>
         </div>
 
         <div class="main-area">
-            <div id="uploadArea" class="upload-area">
-                <h3 style="color: #4a90e2; margin-bottom: 15px;">上传数据文件</h3>
-                <div id="uploadInstructions">
-                    <p style="color: #b0b0b0; margin-bottom: 15px;">
-                        <strong>ESG问卷模式:</strong> 支持Excel文件(.xlsx, .xls)和CSV文件<br>
-                        表头应包含：ESG领域、主题、Key Issue、指标ID、指标名称等字段
-                    </p>
-                    <p style="color: #b0b0b0; margin-bottom: 15px;">
-                        <strong>披露标准模式:</strong> 支持JSONL格式文件<br>
-                        包含：clause_id、clause_content、mandatory_optional等字段
-                    </p>
-                </div>
-                <button class="file-upload" onclick="document.getElementById('fileInput').click()">
-                    选择文件或拖拽到此处
-                </button>
-                <p style="color: #888; font-size: 0.8rem; margin-top: 10px;">
-                    支持同时上传多个文件，系统会自动识别文件类型
-                </p>
-            </div>
-            
-            <div class="loading hidden" id="loading">正在处理数据...</div>
+            <div class="loading" id="loading">正在加载数据...</div>
             
             <div class="sidebar hidden" id="sidebar">
                 <h3 id="sidebarTitle">详细信息</h3>
@@ -755,15 +897,21 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Markdown 报告区域 -->
+            <div class="markdown-area hidden" id="markdownArea">
+                <div class="markdown-content" id="markdownContent">
+                    <!-- Markdown 内容将动态加载 -->
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         // 全局变量
+        let currentMainMode = 'data'; // 'data' 或 'report'
         let currentDataMode = 'questionnaire'; // 'questionnaire' 或 'standards'
         let currentView = 'graph'; // 'graph' 或 'table'
         let allData = [];
@@ -772,6 +920,18 @@
         let selectedNode = null;
         let currentPage = 1;
         let itemsPerPage = 50;
+
+        // 数据文件配置
+        const dataFiles = {
+            questionnaire: 'data/ESG_Questionnaire_WithKeyIssues.xlsx',
+            standards: {
+                GRI: 'data/GRI_final_clauses.jsonl',
+                SASB: 'data/SASB_final_clauses.jsonl',
+                TCFD: 'data/TCFD_final_clauses.jsonl'
+            }
+        };
+
+        const reportFile = 'data/ESG_Report_20250728_162554.md';
 
         // 问卷表格列配置
         let questionnaireColumns = {
@@ -814,109 +974,24 @@
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
-            updateUIForMode();
+            initializeApp();
         });
 
         function setupEventListeners() {
-            // 文件上传
-            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-            
-            // 拖拽上传
-            const uploadArea = document.getElementById('uploadArea');
-            uploadArea.addEventListener('dragover', handleDragOver);
-            uploadArea.addEventListener('drop', handleDrop);
-
             // 筛选器
             document.getElementById('searchInput').addEventListener('input', applyFilters);
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            document.getElementById('uploadArea').classList.add('dragover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            document.getElementById('uploadArea').classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            processFiles(files);
-        }
-
-        function handleFileSelect(e) {
-            const files = e.target.files;
-            processFiles(files);
-        }
-
-        // 切换数据模式
-        function switchDataMode(mode) {
-            currentDataMode = mode;
             
-            // 更新按钮状态
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // 更新界面
-            updateUIForMode();
-            
-            // 清空数据
-            allData = [];
-            filteredData = [];
-            resetInterface();
+            // 初始化 Mermaid
+            mermaid.initialize({ startOnLoad: true });
         }
 
-        function updateUIForMode() {
-            const questionnaireControls = document.getElementById('questionnaireControls');
-            const standardsControls = document.getElementById('standardsControls');
-
-            if (currentDataMode === 'questionnaire') {
-                questionnaireControls.classList.remove('hidden');
-                standardsControls.classList.add('hidden');
-                document.getElementById('searchInput').placeholder = '搜索指标名称...';
-            } else {
-                questionnaireControls.classList.add('hidden');
-                standardsControls.classList.remove('hidden');
-                document.getElementById('searchInput').placeholder = '搜索条款内容...';
-            }
-        }
-
-        function resetInterface() {
-            document.getElementById('uploadArea').style.display = 'block';
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('sidebar').classList.add('hidden');
-            document.getElementById('contentArea').classList.add('hidden');
-            document.getElementById('resetBtn').classList.add('hidden');
-            document.getElementById('exportBtn').classList.add('hidden');
-        }
-
-        // 处理文件
-        async function processFiles(files) {
-            if (files.length === 0) return;
-
-            document.getElementById('uploadArea').style.display = 'none';
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('loading').textContent = `正在处理 ${files.length} 个文件...`;
-
-            allData = [];
-
+        async function initializeApp() {
             try {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    document.getElementById('loading').textContent = `正在处理文件 ${i + 1}/${files.length}: ${file.name}`;
-                    
-                    if (currentDataMode === 'questionnaire') {
-                        await processQuestionnaireFile(file);
-                    } else {
-                        await processStandardsFile(file);
-                    }
-                }
-
-                if (allData.length === 0) {
-                    throw new Error('没有成功解析到任何数据');
-                }
-
-                document.getElementById('loading').textContent = `成功加载 ${allData.length} 条数据，正在生成可视化...`;
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('loading').textContent = '正在加载数据...';
                 
-                // 初始化界面
+                await loadDataFiles();
+                
                 initializeInterface();
                 setupModeFilters();
                 applyFilters();
@@ -939,90 +1014,392 @@
                 }
                 
             } catch (error) {
-                console.error('处理文件失败:', error);
+                console.error('初始化失败:', error);
                 document.getElementById('loading').innerHTML = `
                     <div class="error-message">
-                        <h3>文件处理失败</h3>
+                        <h3>数据加载失败</h3>
                         <p>错误信息: ${error.message}</p>
-                        <p>请确保上传的文件格式正确</p>
-                        <button class="control-btn" onclick="location.reload()">重新开始</button>
+                        <p>请确保所有数据文件都在正确的位置</p>
+                        <button class="control-btn" onclick="location.reload()">重新加载</button>
                     </div>
                 `;
             }
         }
 
-        // 处理问卷文件
-        async function processQuestionnaireFile(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-            const processedData = jsonData.map((row, index) => ({
-                id: index + 1,
-                type: 'questionnaire',
-                esgDomain: row['ESG领域'] || row['ESG_Domain'] || '',
-                topic: row['主题'] || row['Topic'] || '',
-                keyIssue: row['Key Issue'] || row['关键议题'] || '',
-                indicatorId: row['指标ID'] || row['Indicator_ID'] || '',
-                indicatorName: row['指标名称'] || row['Indicator_Name'] || '',
-                description: row['指标描述'] || row['Description'] || '',
-                calculation: row['计算方法'] || row['Calculation'] || '',
-                dataCollection: row['数据收集指导'] || row['Data_Collection'] || '',
-                dataType: row['数据类型'] || row['Data_Type'] || '',
-                unit: row['建议单位'] || row['Unit'] || '',
-                required: row['是否必填'] || row['Required'] || '',
-                reference: row['参考标准'] || row['Reference'] || '',
-                notes: row['披露注意事项'] || row['Notes'] || '',
-                sampleData: row['假数据'] || row['Sample_Data'] || '',
-                dataDescription: row['数据说明'] || row['Data_Description'] || '',
-                dataRemarks: row['数据备注'] || row['Data_Remarks'] || '',
-                reliability: row['数据可信度'] || row['Reliability'] || '',
-                sourceBatch: row['来源批次'] || row['Source_Batch'] || '',
-                relatedClauseId: row['相关条款ID'] || row['Related_Clause_ID'] || '',
-                actualData: row['实际披露数据'] || row['Actual_Data'] || '',
-                finalRemarks: row['最终备注'] || row['Final_Remarks'] || ''
-            }));
-
-            allData.push(...processedData);
-        }
-
-        // 处理标准文件
-        async function processStandardsFile(file) {
-            const text = await readFileAsText(file);
-            const lines = text.split('\n').filter(line => line.trim());
+        async function loadDataFiles() {
+            allData = [];
             
-            // 确定标准类型
-            let standard = 'UNKNOWN';
-            if (file.name.includes('GRI')) standard = 'GRI';
-            else if (file.name.includes('SASB')) standard = 'SASB';
-            else if (file.name.includes('TCFD')) standard = 'TCFD';
+            // 加载问卷数据
+            try {
+                const questionnaireResponse = await fetch(dataFiles.questionnaire);
+                if (!questionnaireResponse.ok) throw new Error(`无法加载问卷数据: ${questionnaireResponse.status}`);
+                
+                const arrayBuffer = await questionnaireResponse.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-            const processedData = [];
-            for (const line of lines) {
+                const processedData = jsonData.map((row, index) => ({
+                    id: index + 1,
+                    type: 'questionnaire',
+                    esgDomain: row['ESG领域'] || row['ESG_Domain'] || '',
+                    topic: row['主题'] || row['Topic'] || '',
+                    keyIssue: row['Key Issue'] || row['关键议题'] || '',
+                    indicatorId: row['指标ID'] || row['Indicator_ID'] || '',
+                    indicatorName: row['指标名称'] || row['Indicator_Name'] || '',
+                    description: row['指标描述'] || row['Description'] || '',
+                    calculation: row['计算方法'] || row['Calculation'] || '',
+                    dataCollection: row['数据收集指导'] || row['Data_Collection'] || '',
+                    dataType: row['数据类型'] || row['Data_Type'] || '',
+                    unit: row['建议单位'] || row['Unit'] || '',
+                    required: row['是否必填'] || row['Required'] || '',
+                    reference: row['参考标准'] || row['Reference'] || '',
+                    notes: row['披露注意事项'] || row['Notes'] || '',
+                    sampleData: row['假数据'] || row['Sample_Data'] || '',
+                    dataDescription: row['数据说明'] || row['Data_Description'] || '',
+                    dataRemarks: row['数据备注'] || row['Data_Remarks'] || '',
+                    reliability: row['数据可信度'] || row['Reliability'] || '',
+                    sourceBatch: row['来源批次'] || row['Source_Batch'] || '',
+                    relatedClauseId: row['相关条款ID'] || row['Related_Clause_ID'] || '',
+                    actualData: row['实际披露数据'] || row['Actual_Data'] || '',
+                    finalRemarks: row['最终备注'] || row['Final_Remarks'] || ''
+                }));
+
+                allData.push(...processedData);
+            } catch (error) {
+                console.error('加载问卷数据失败:', error);
+            }
+
+            // 加载标准数据
+            for (const [standard, filename] of Object.entries(dataFiles.standards)) {
                 try {
-                    const item = JSON.parse(line);
-                    processedData.push({
-                        ...item,
-                        type: 'standards',
-                        standard: item.standard || item.applicable_standard || standard
-                    });
-                } catch (parseError) {
-                    console.warn('解析行失败:', line, parseError);
+                    const response = await fetch(filename);
+                    if (!response.ok) throw new Error(`无法加载${standard}数据: ${response.status}`);
+                    
+                    const text = await response.text();
+                    const lines = text.split('\n').filter(line => line.trim());
+
+                    const processedData = [];
+                    for (const line of lines) {
+                        try {
+                            const item = JSON.parse(line);
+                            processedData.push({
+                                ...item,
+                                type: 'standards',
+                                standard: item.standard || item.applicable_standard || standard
+                            });
+                        } catch (parseError) {
+                            console.warn('解析行失败:', line, parseError);
+                        }
+                    }
+
+                    allData.push(...processedData);
+                } catch (error) {
+                    console.error(`加载${standard}数据失败:`, error);
                 }
             }
 
-            allData.push(...processedData);
+            console.log(`成功加载 ${allData.length} 条数据`);
         }
 
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsText(file);
+        // 切换主模式
+        function switchMainMode(mode) {
+            currentMainMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'data') {
+                document.getElementById('dataControls').classList.remove('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('contentArea').classList.remove('hidden');
+                document.getElementById('markdownArea').classList.add('hidden');
+            } else {
+                document.getElementById('dataControls').classList.add('hidden');
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('contentArea').classList.add('hidden');
+                document.getElementById('markdownArea').classList.remove('hidden');
+                loadMarkdownReport();
+            }
+        }
+
+        async function loadMarkdownReport() {
+            try {
+                document.getElementById('markdownContent').innerHTML = '<div class="loading">正在加载报告...</div>';
+                
+                const response = await fetch(reportFile);
+                if (!response.ok) throw new Error(`无法加载报告文件: ${response.status}`);
+                
+                const markdown = await response.text();
+                await renderMarkdown(markdown);
+                
+            } catch (error) {
+                console.error('加载报告失败:', error);
+                document.getElementById('markdownContent').innerHTML = `
+                    <div class="error-message">
+                        <h3>报告加载失败</h3>
+                        <p>错误信息: ${error.message}</p>
+                        <p>请确保报告文件存在且可访问</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function renderMarkdown(markdown) {
+            // 处理图表代码块
+            const processedMarkdown = processChartBlocks(markdown);
+
+            // 渲染 Markdown
+            const html = marked.parse(processedMarkdown);
+            document.getElementById('markdownContent').innerHTML = html;
+
+            // 生成目录
+            generateTableOfContents();
+
+            // 渲染图表
+            renderCharts();
+
+            // 增强表格
+            enhanceTables();
+        }
+
+        function processChartBlocks(markdown) {
+            return markdown.replace(/```chart\n([\s\S]*?)```/g, (match, chartData) => {
+                const id = 'chart_' + Math.random().toString(36).substr(2, 9);
+                return `<div class="chart-container">
+                    <canvas id="${id}" data-chart='${chartData.trim()}'></canvas>
+                </div>`;
             });
+        }
+
+        function renderCharts() {
+            const charts = document.querySelectorAll('canvas[data-chart]');
+            charts.forEach(canvas => {
+                try {
+                    const chartData = canvas.getAttribute('data-chart');
+                    const config = parseChartConfig(chartData);
+                    new Chart(canvas, config);
+                } catch (error) {
+                    console.error('图表渲染错误:', error);
+                }
+            });
+        }
+
+        function parseChartConfig(dataString) {
+            const lines = dataString.split('\n');
+            const config = {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '图表'
+                        }
+                    }
+                }
+            };
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('type:')) {
+                    config.type = line.split(':')[1].trim();
+                } else if (line.startsWith('title:')) {
+                    config.options.plugins.title.text = line.split(':')[1].trim();
+                } else if (line.includes('labels:')) {
+                    const match = line.match(/\[(.*?)\]/);
+                    if (match) {
+                        config.data.labels = match[1].split(',').map(s => s.trim().replace(/"/g, ''));
+                    }
+                } else if (line.includes('label:')) {
+                    const label = line.split(':')[1].trim().replace(/"/g, '');
+                    const dataset = { label, data: [], borderColor: getRandomColor(), backgroundColor: getRandomColor(0.2) };
+                    config.data.datasets.push(dataset);
+                } else if (line.includes('data:') && config.data.datasets.length > 0) {
+                    const match = line.match(/\[(.*?)\]/);
+                    if (match) {
+                        const lastDataset = config.data.datasets[config.data.datasets.length - 1];
+                        lastDataset.data = match[1].split(',').map(s => parseFloat(s.trim()));
+                    }
+                } else if (line.includes('colors:')) {
+                    const match = line.match(/\[(.*?)\]/);
+                    if (match) {
+                        const colors = match[1].split(',').map(s => s.trim().replace(/"/g, ''));
+                        config.data.datasets.forEach((dataset, index) => {
+                            if (colors[index]) {
+                                dataset.backgroundColor = colors[index];
+                                dataset.borderColor = colors[index];
+                            }
+                        });
+                    }
+                }
+            });
+
+            // 饼图特殊处理
+            if (config.type === 'pie' && lines.some(line => line.includes('data:') && !line.includes('datasets'))) {
+                const dataLine = lines.find(line => line.includes('data:') && !line.includes('datasets'));
+                const match = dataLine.match(/\[(.*?)\]/);
+                if (match) {
+                    const data = match[1].split(',').map(s => parseFloat(s.trim()));
+                    config.data.datasets = [{
+                        data: data,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+                        ]
+                    }];
+                }
+            }
+
+            return config;
+        }
+
+        function getRandomColor(alpha = 1) {
+            const colors = [
+                `rgba(74, 144, 226, ${alpha})`,
+                `rgba(0, 255, 136, ${alpha})`,
+                `rgba(255, 107, 107, ${alpha})`,
+                `rgba(255, 211, 61, ${alpha})`,
+                `rgba(153, 102, 255, ${alpha})`,
+                `rgba(255, 159, 64, ${alpha})`
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function generateTableOfContents() {
+            const headings = document.querySelectorAll('.markdown-content h1, .markdown-content h2, .markdown-content h3');
+            if (headings.length === 0) return;
+
+            const toc = document.createElement('div');
+            toc.className = 'toc';
+            toc.innerHTML = '<h3>📋 目录</h3><ul></ul>';
+            const ul = toc.querySelector('ul');
+
+            headings.forEach((heading, index) => {
+                const id = `heading-${index}`;
+                heading.id = id;
+
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `#${id}`;
+                a.textContent = heading.textContent;
+                a.style.paddingLeft = (heading.tagName === 'H2' ? '20px' : heading.tagName === 'H3' ? '40px' : '0');
+                
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
+
+            const markdownContent = document.getElementById('markdownContent');
+            markdownContent.insertBefore(toc, markdownContent.firstChild);
+        }
+
+        function enhanceTables() {
+            const tables = document.querySelectorAll('.markdown-content table');
+            tables.forEach(table => {
+                // 检查是否包含数字数据，如果是则尝试生成图表
+                const rows = Array.from(table.querySelectorAll('tr'));
+                if (rows.length > 1) {
+                    const headers = Array.from(rows[0].querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+                    const data = rows.slice(1).map(row => 
+                        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim())
+                    );
+
+                    // 如果表格包含数值数据，添加一个"生成图表"按钮
+                    if (hasNumericData(data)) {
+                        const button = document.createElement('button');
+                        button.textContent = '📊 生成图表';
+                        button.className = 'control-btn';
+                        button.style.marginTop = '10px';
+                        button.onclick = () => generateChartFromTable(headers, data, table);
+                        table.parentNode.insertBefore(button, table.nextSibling);
+                    }
+                }
+            });
+        }
+
+        function hasNumericData(data) {
+            return data.some(row => 
+                row.some(cell => !isNaN(parseFloat(cell)) && isFinite(cell))
+            );
+        }
+
+        function generateChartFromTable(headers, data, table) {
+            const canvas = document.createElement('canvas');
+            const container = document.createElement('div');
+            container.className = 'chart-container';
+            container.appendChild(canvas);
+            table.parentNode.insertBefore(container, table.nextSibling.nextSibling);
+
+            // 尝试自动检测数据结构并生成合适的图表
+            const numericColumns = [];
+            headers.forEach((header, index) => {
+                if (data.every(row => !isNaN(parseFloat(row[index])) && isFinite(row[index]))) {
+                    numericColumns.push(index);
+                }
+            });
+
+            if (numericColumns.length > 0) {
+                const config = {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(row => row[0]),
+                        datasets: numericColumns.map((colIndex, i) => ({
+                            label: headers[colIndex],
+                            data: data.map(row => parseFloat(row[colIndex])),
+                            backgroundColor: getRandomColor(0.7),
+                            borderColor: getRandomColor(1),
+                            borderWidth: 1
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '基于表格数据生成的图表'
+                            }
+                        }
+                    }
+                };
+
+                new Chart(canvas, config);
+            }
+        }
+
+        // 切换数据模式
+        function switchDataMode(mode) {
+            currentDataMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 更新界面
+            updateUIForMode();
+            
+            // 重新应用筛选
+            applyFilters();
+        }
+
+        function updateUIForMode() {
+            const questionnaireControls = document.getElementById('questionnaireControls');
+            const standardsControls = document.getElementById('standardsControls');
+
+            if (currentDataMode === 'questionnaire') {
+                questionnaireControls.classList.remove('hidden');
+                standardsControls.classList.add('hidden');
+                document.getElementById('searchInput').placeholder = '搜索指标名称...';
+            } else {
+                questionnaireControls.classList.add('hidden');
+                standardsControls.classList.remove('hidden');
+                document.getElementById('searchInput').placeholder = '搜索条款内容...';
+            }
         }
 
         // 初始化界面
@@ -1038,7 +1415,8 @@
 
         function initQuestionnaireInterface() {
             // 填充ESG领域选择器
-            const domains = [...new Set(allData.map(d => d.esgDomain))].filter(d => d);
+            const questionnaireData = allData.filter(d => d.type === 'questionnaire');
+            const domains = [...new Set(questionnaireData.map(d => d.esgDomain))].filter(d => d);
             const domainSelect = document.getElementById('domainSelect');
             domainSelect.innerHTML = '<option value="all">全部领域</option>';
             domains.forEach(domain => {
@@ -1049,7 +1427,7 @@
             });
 
             // 填充主题选择器
-            const topics = [...new Set(allData.map(d => d.topic))].filter(d => d);
+            const topics = [...new Set(questionnaireData.map(d => d.topic))].filter(d => d);
             const topicSelect = document.getElementById('topicSelect');
             topicSelect.innerHTML = '<option value="all">全部主题</option>';
             topics.forEach(topic => {
@@ -1064,7 +1442,8 @@
 
         function initStandardsInterface() {
             // 填充行业选择器
-            const industries = [...new Set(allData.map(d => d.applicable_industry))].filter(d => d);
+            const standardsData = allData.filter(d => d.type === 'standards');
+            const industries = [...new Set(standardsData.map(d => d.applicable_industry))].filter(d => d);
             const industrySelect = document.getElementById('industrySelect');
             industrySelect.innerHTML = '<option value="all">全部行业</option>';
             industries.forEach(industry => {
@@ -1077,7 +1456,7 @@
             });
 
             // 填充标准选择器
-            const standards = [...new Set(allData.map(d => d.standard))].filter(d => d);
+            const standards = [...new Set(standardsData.map(d => d.standard))].filter(d => d);
             const standardSelect = document.getElementById('standardSelect');
             standardSelect.innerHTML = '<option value="all">全部标准</option>';
             standards.forEach(standard => {
@@ -1160,6 +1539,7 @@
             const required = document.getElementById('requiredSelect').value;
 
             filteredData = allData.filter(item => {
+                if (item.type !== 'questionnaire') return false;
                 if (domain !== 'all' && item.esgDomain !== domain) return false;
                 if (topic !== 'all' && item.topic !== topic) return false;
                 if (required !== 'all' && item.required !== required) return false;
@@ -1175,6 +1555,7 @@
             const industry = document.getElementById('industrySelect').value;
 
             filteredData = allData.filter(item => {
+                if (item.type !== 'standards') return false;
                 if (standard !== 'all' && item.standard !== standard) return false;
                 if (type !== 'all' && item.mandatory_optional !== type) return false;
                 if (industry !== 'all' && item.applicable_industry !== industry) return false;
